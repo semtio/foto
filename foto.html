@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Photo Sheet Layout — печать фотографий</title>
+<style>
+  :root {
+    --bg:#111316;
+    --panel:#181b20;
+    --panel2:#1f2329;
+    --text:#f5f7fa;
+    --muted:#9ca3af;
+    --line:#303640;
+    --accent:#e23b3b;
+    --accent2:#ff5b5b;
+    --ok:#3fb980;
+    --warn:#e7b94a;
+    --shadow:0 18px 50px rgba(0,0,0,.28);
+    --radius:16px;
+  }
+  *{box-sizing:border-box}
+  [hidden]{display:none!important}
+  html,body{height:100%}
+  body{
+    margin:0;
+    font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    background:linear-gradient(180deg,#0f1114 0%,#14171b 100%);
+    color:var(--text);
+    overflow:hidden;
+  }
+  button,input,select{font:inherit}
+  .app{height:100%;display:grid;grid-template-columns:390px 1fr;gap:14px;padding:14px}
+  .sidebar,.workspace{background:rgba(24,27,32,.96);border:1px solid #242933;border-radius:20px;box-shadow:var(--shadow)}
+  .sidebar{display:flex;flex-direction:column;min-height:0}
+  .brand{padding:18px 18px 14px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
+  .brand h1{font-size:17px;margin:0;letter-spacing:.2px}
+  .badge{font-size:11px;color:#fff;background:var(--accent);padding:5px 8px;border-radius:999px;font-weight:700}
+  .scroll{overflow:auto;padding:14px 14px 22px}
+  .section{background:var(--panel2);border:1px solid #2b3038;border-radius:14px;padding:13px;margin-bottom:12px}
+  .section h2{font-size:13px;margin:0 0 11px;color:#fff;display:flex;align-items:center;justify-content:space-between}
+  .section h2 span{color:var(--muted);font-weight:500;font-size:11px}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+  .row.three{grid-template-columns:1fr 1fr 1fr}
+  label{display:block;font-size:11px;color:#cbd0d8;margin-bottom:5px}
+  input[type="number"],select,input[type="text"]{
+    width:100%;background:#13161a;color:var(--text);border:1px solid #353b45;border-radius:9px;padding:9px 10px;outline:none;
+  }
+  input:focus,select:focus{border-color:#8d3434;box-shadow:0 0 0 3px rgba(226,59,59,.08)}
+  input[type="range"]{width:100%;accent-color:var(--accent)}
+  .check{display:flex;align-items:center;gap:8px;color:#d7dbe1;font-size:12px;margin-top:5px}
+  .check input{accent-color:var(--accent)}
+  .toolbar{display:flex;gap:7px;flex-wrap:wrap}
+  .btn{border:1px solid #373d47;background:#252a31;color:#fff;border-radius:9px;padding:9px 11px;cursor:pointer;font-weight:700;font-size:12px}
+  .btn:hover{background:#2d333b}
+  .btn.red{background:var(--accent);border-color:var(--accent)}
+  .btn.red:hover{background:var(--accent2)}
+  .btn.ghost{background:transparent}
+  .file-btn{position:relative;overflow:hidden}
+  .file-btn input{position:absolute;inset:0;opacity:0;cursor:pointer}
+  .mini-preview{height:205px;border-radius:12px;background:#0e1013;border:1px solid #303640;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;transition:border-color .16s ease,box-shadow .16s ease,background .16s ease}
+  .mini-preview.drag-over{border-color:var(--accent2);background:#171416;box-shadow:0 0 0 3px rgba(226,59,59,.16)}
+  .drop-overlay{position:absolute;inset:0;z-index:2;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(14,16,19,.86);color:#fff;font-size:13px;font-weight:700;text-align:center;pointer-events:none;opacity:0;transition:opacity .16s ease}
+  .mini-preview.drag-over .drop-overlay{opacity:1}
+  .mini-preview canvas{max-width:100%;max-height:100%;display:block;cursor:grab}
+  .mini-preview canvas.dragging{cursor:grabbing}
+  .hint{font-size:10px;color:#8f96a1;line-height:1.45;margin-top:7px}
+  .value{color:#fff;font-variant-numeric:tabular-nums}
+  .workspace{display:flex;flex-direction:column;min-width:0;min-height:0}
+  .topbar{height:58px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 15px;gap:12px}
+  .topbar .left,.topbar .right{display:flex;align-items:center;gap:8px}
+  .status{font-size:12px;color:var(--muted)}
+  .status strong{color:#fff}
+  .canvas-area{flex:1;min-height:0;overflow:auto;background:radial-gradient(circle at 50% 10%,#1d2127,#0e1013 70%);display:flex;align-items:flex-start;justify-content:center;padding:36px}
+  .sheet-wrap{position:relative;filter:drop-shadow(0 16px 28px rgba(0,0,0,.35))}
+  #sheetCanvas{display:block;background:white;cursor:grab;touch-action:none}
+  #sheetCanvas.dragging{cursor:grabbing}
+  .sheet-position{position:absolute;z-index:4;left:50%;bottom:-34px;transform:translateX(-50%);display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid #343a44;border-radius:9px;background:rgba(24,27,32,.94);box-shadow:0 5px 15px rgba(0,0,0,.28);color:#aeb5bf;font-size:10px;white-space:nowrap;pointer-events:auto}
+  .sheet-position b{color:#fff;font-variant-numeric:tabular-nums;font-size:11px}
+  .center-sheet-btn{border:0;border-left:1px solid #3a404a;background:transparent;color:#ff7777;padding:1px 2px 1px 8px;font:700 10px system-ui;cursor:pointer}
+  .center-sheet-btn:hover{color:#fff}
+  .rotate-sheet-btn{position:absolute;z-index:3;top:10px;right:10px;width:38px;height:38px;padding:0;border:1px solid rgba(255,255,255,.25);border-radius:10px;background:rgba(24,27,32,.88);color:#fff;font-size:21px;line-height:1;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.3);backdrop-filter:blur(6px)}
+  .rotate-sheet-btn:hover{background:var(--accent);border-color:var(--accent2)}
+  .rotate-sheet-btn.active{background:var(--accent);border-color:var(--accent2);box-shadow:0 0 0 2px rgba(226,59,59,.22),0 4px 14px rgba(0,0,0,.3)}
+  .rotate-sheet-btn:focus-visible{outline:2px solid #fff;outline-offset:2px}
+  #rotatePhotoBtn{top:56px}
+  .overflow-note{position:absolute;left:50%;top:-25px;transform:translateX(-50%);font-size:11px;color:#ffd0d0;background:rgba(226,59,59,.12);border:1px solid rgba(226,59,59,.35);padding:5px 8px;border-radius:999px;display:none;white-space:nowrap}
+  .footer{border-top:1px solid var(--line);padding:10px 15px;display:flex;justify-content:space-between;gap:12px;font-size:11px;color:#888f99}
+  .metric{display:inline-flex;gap:5px;align-items:center}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--ok)}
+  .dot.warn{background:var(--warn)}
+  .crop-info{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+  .pill{background:#15181d;border:1px solid #2f3540;border-radius:9px;padding:8px 9px;font-size:11px;color:#b7bdc6}
+  .pill b{display:block;color:#fff;font-size:12px;margin-top:2px}
+  .separator{height:1px;background:#303640;margin:10px 0}
+  @media (max-width:900px){
+    body{overflow:auto}
+    .app{height:auto;grid-template-columns:1fr;padding:8px}
+    .sidebar,.workspace{min-height:auto}
+    .workspace{height:75vh}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <h1>Photo Sheet Layout</h1>
+      <div class="badge">300 DPI</div>
+    </div>
+    <div class="scroll">
+      <section class="section">
+        <h2>1. Фотография <span>1 файл</span></h2>
+        <div class="toolbar">
+          <label class="btn red file-btn">Загрузить фото<input id="fileInput" type="file" accept="image/*"></label>
+          <button class="btn ghost" id="resetCropBtn">Сбросить кадр</button>
+        </div>
+        <div class="mini-preview" id="photoDropZone" style="margin-top:10px">
+          <canvas id="cropCanvas" width="340" height="205"></canvas>
+          <div class="drop-overlay" aria-hidden="true">Отпустите фото здесь</div>
+          <button class="rotate-sheet-btn active" id="rotateSheetBtn" type="button" aria-label="Повернуть лист" aria-pressed="true" title="Альбомная ориентация листа">↔</button>
+          <button class="rotate-sheet-btn" id="rotatePhotoBtn" type="button" aria-label="Повернуть фотографию на 90 градусов" title="Повернуть фотографию на 90°">↻</button>
+        </div>
+        <div class="hint" id="photoHint">Перетащите фото в область выше или выберите файл кнопкой. После загрузки двигайте фото мышью, колесо — масштаб.</div>
+        <div class="separator"></div>
+        <label>Масштаб <span class="value" id="zoomVal">100%</span></label>
+        <input id="zoomRange" type="range" min="100" max="300" value="100" step="1">
+        <div class="row" style="margin-top:8px">
+          <div><label>Сдвиг X</label><input id="offsetX" type="number" value="0" step="1"></div>
+          <div><label>Сдвиг Y</label><input id="offsetY" type="number" value="0" step="1"></div>
+        </div>
+        <div class="separator"></div>
+        <label>Красный <span class="value" id="redVal">0</span></label>
+        <input id="redRange" type="range" min="-100" max="100" value="0" step="1">
+        <label>Зелёный <span class="value" id="greenVal">0</span></label>
+        <input id="greenRange" type="range" min="-100" max="100" value="0" step="1">
+        <label>Синий <span class="value" id="blueVal">0</span></label>
+        <input id="blueRange" type="range" min="-100" max="100" value="0" step="1">
+        <button class="btn ghost" id="resetColorBtn" type="button" style="width:100%;margin-top:8px">Сбросить цвет</button>
+      </section>
+
+      <section class="section">
+        <h2>2. Размер фотографии <span>см</span></h2>
+        <label>Пресет</label>
+        <select id="photoPreset">
+          <option value="3.5x4.5">3.5 × 4.5 см — документы</option>
+          <option value="3x4">3 × 4 см</option>
+          <option value="4x6">4 × 6 см</option>
+          <option value="5x5">5 × 5 см</option>
+          <option value="5x7">5 × 7 см</option>
+          <option value="6x9">6 × 9 см</option>
+          <option value="custom">Свой размер</option>
+        </select>
+        <div class="row" id="photoCustomRow" style="margin-top:8px" hidden>
+          <div><label>Ширина</label><input id="photoW" type="number" value="3.5" min="0.5" step="0.1"></div>
+          <div><label>Высота</label><input id="photoH" type="number" value="4.5" min="0.5" step="0.1"></div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>3. Лист <span>см</span></h2>
+        <label>Размер листа</label>
+        <select id="sheetPreset">
+          <optgroup label="Форматы фотопечати">
+            <option value="10x15">10 × 15</option>
+            <option value="9x13">9 × 13</option>
+            <option value="11x15">11 × 15</option>
+            <option value="13x18">13 × 18</option>
+            <option value="15x20">15 × 20</option>
+            <option value="15x21">15 × 21</option>
+            <option value="15x15">15 × 15</option>
+            <option value="18x24">18 × 24</option>
+            <option value="20x30">20 × 30</option>
+            <option value="21x30">21 × 30</option>
+          </optgroup>
+          <optgroup label="Точные форматы ISO A">
+            <option value="10.5x14.8">A6 — 10,5 × 14,8 см</option>
+            <option value="14.8x21">A5 — 14,8 × 21 см</option>
+            <option value="21x29.7">A4 — 21 × 29,7 см</option>
+          </optgroup>
+          <option value="custom">Свой размер</option>
+        </select>
+        <div class="row" id="sheetCustomRow" style="margin-top:8px" hidden>
+          <div><label>Ширина</label><input id="sheetW" type="number" value="10" min="1" step="0.1"></div>
+          <div><label>Высота</label><input id="sheetH" type="number" value="15" min="1" step="0.1"></div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>4. Раскладка <span>авто</span></h2>
+        <label>Количество</label>
+        <input id="countInput" type="number" min="1" max="200" value="8">
+        <label class="check"><input id="maxFill" type="checkbox"> Заполнить лист максимально</label>
+        <label class="check"><input id="allowRotate" type="checkbox" checked> Автоповорот фото для лучшего заполнения</label>
+        <label class="check"><input id="useMargin" type="checkbox"> Поля по краям листа</label>
+        <div id="marginRow" class="row" style="display:none;margin-top:8px">
+          <div><label>Поля, мм</label><input id="marginInput" type="number" min="0" max="30" step="0.5" value="3"></div>
+          <div></div>
+        </div>
+        <div class="crop-info">
+          <div class="pill">Помещается полностью<b id="fitsCount">0</b></div>
+          <div class="pill">Максимум на листе<b id="capacity">0</b></div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>5. Расстояние между фотографиями <span>мм</span></h2>
+        <label>Размер промежутка</label>
+        <input id="gapInput" type="number" min="0" max="10" step="0.5" value="2">
+        <div class="hint">Линия реза проходит точно по центру промежутка.</div>
+      </section>
+
+      <section class="section">
+        <h2>6. Линии реза <span>1 px</span></h2>
+        <div class="row">
+          <div>
+            <label>Стиль</label>
+            <select id="cutStyle">
+              <option value="none">Без линий</option>
+              <option value="solid">Сплошная</option>
+              <option value="dashed" selected>Пунктир</option>
+              <option value="dotted">Точки</option>
+              <option value="corners">Только углы</option>
+            </select>
+          </div>
+          <div>
+            <label>Прозрачность <span class="value" id="alphaVal">45%</span></label>
+            <input id="cutAlpha" type="range" min="5" max="100" value="45">
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>7. Экспорт <span>300 DPI</span></h2>
+        <div class="row">
+          <div>
+            <label>Формат</label>
+            <select id="formatSelect"><option value="png" selected>PNG — максимум качества</option><option value="jpg">JPG</option></select>
+          </div>
+          <div id="qualityWrap" style="display:none">
+            <label>JPEG качество <span class="value" id="qualityVal">95%</span></label>
+            <input id="qualityRange" type="range" min="60" max="100" value="95">
+          </div>
+        </div>
+        <button class="btn red" style="width:100%;margin-top:4px" id="exportBtn">Экспортировать лист</button>
+      </section>
+    </div>
+  </aside>
+
+  <main class="workspace">
+    <div class="topbar">
+      <div class="left">
+        <span class="status">Лист: <strong id="sheetInfo">10 × 15 см</strong></span>
+        <span class="status">•</span>
+        <span class="status">Фото: <strong id="photoInfo">3.5 × 4.5 см</strong></span>
+      </div>
+      <div class="right">
+        <span class="status">Выход: <strong id="pixelInfo">1181 × 1772 px</strong></span>
+      </div>
+    </div>
+    <div class="canvas-area" id="canvasArea">
+      <div class="sheet-wrap" id="sheetWrap">
+        <div class="overflow-note" id="overflowNote">Часть фотографий выходит за пределы листа</div>
+        <canvas id="sheetCanvas"></canvas>
+        <div class="sheet-position" aria-live="polite"><span>X <b id="sheetOffsetX">0,0 мм</b></span><span>Y <b id="sheetOffsetY">0,0 мм</b></span><button class="center-sheet-btn" id="centerSheetBtn" type="button">По центру</button></div>
+      </div>
+    </div>
+    <div class="footer">
+      <div class="metric"><span class="dot" id="fitDot"></span><span id="fitText">Все фотографии помещаются</span></div>
+      <div>Подсказка: уменьшай количество, размер фото или зазор, если элементы уходят за край.</div>
+    </div>
+  </main>
+</div>
+<script src="samples.js"></script>
+<script>
+(() => {
+  const DPI = 300;
+  const PX_PER_CM = DPI / 2.54;
+  const $ = id => document.getElementById(id);
+  const els = {
+    fileInput:$('fileInput'), photoDropZone:$('photoDropZone'), photoHint:$('photoHint'), cropCanvas:$('cropCanvas'), zoomRange:$('zoomRange'), zoomVal:$('zoomVal'), offsetX:$('offsetX'), offsetY:$('offsetY'), resetCropBtn:$('resetCropBtn'), redRange:$('redRange'), greenRange:$('greenRange'), blueRange:$('blueRange'), redVal:$('redVal'), greenVal:$('greenVal'), blueVal:$('blueVal'), resetColorBtn:$('resetColorBtn'),
+    photoPreset:$('photoPreset'), photoCustomRow:$('photoCustomRow'), photoW:$('photoW'), photoH:$('photoH'), sheetPreset:$('sheetPreset'), sheetCustomRow:$('sheetCustomRow'), sheetW:$('sheetW'), sheetH:$('sheetH'),
+    rotateSheetBtn:$('rotateSheetBtn'), rotatePhotoBtn:$('rotatePhotoBtn'), countInput:$('countInput'), gapInput:$('gapInput'), maxFill:$('maxFill'), allowRotate:$('allowRotate'), useMargin:$('useMargin'), marginInput:$('marginInput'), marginRow:$('marginRow'),
+    cutStyle:$('cutStyle'), cutAlpha:$('cutAlpha'), alphaVal:$('alphaVal'), formatSelect:$('formatSelect'), qualityWrap:$('qualityWrap'), qualityRange:$('qualityRange'), qualityVal:$('qualityVal'), exportBtn:$('exportBtn'),
+    sheetCanvas:$('sheetCanvas'), sheetWrap:$('sheetWrap'), canvasArea:$('canvasArea'), overflowNote:$('overflowNote'), sheetOffsetX:$('sheetOffsetX'), sheetOffsetY:$('sheetOffsetY'), centerSheetBtn:$('centerSheetBtn'), sheetInfo:$('sheetInfo'), photoInfo:$('photoInfo'), pixelInfo:$('pixelInfo'), fitsCount:$('fitsCount'), capacity:$('capacity'), fitDot:$('fitDot'), fitText:$('fitText')
+  };
+
+  const state = { img:null, adjustedImg:null, rotatedImg:null, imageRotation:0, zoom:1, offsetX:0, offsetY:0, drag:false, lastX:0, lastY:0, rotated:true, sheetX:0, sheetY:0, snapX:false, snapY:false };
+  let lastGroupCenter=null;
+
+  function cm(v){ return Math.max(0.01, parseFloat(v)||0.01); }
+  function mm(v){ return (parseFloat(v)||0)/10; }
+  function setPairFromPreset(select, w, h){
+    if(select.value==='custom') return;
+    const [a,b]=select.value.split('x').map(Number); w.value=a; h.value=b;
+  }
+  function layoutConfig(){
+    const sw=cm(els.sheetW.value), sh=cm(els.sheetH.value);
+    let pw=cm(els.photoW.value), ph=cm(els.photoH.value);
+    const gap=mm(els.gapInput.value);
+    const margin=els.useMargin.checked ? mm(els.marginInput.value) : 0;
+    const innerW=Math.max(0,sw-2*margin), innerH=Math.max(0,sh-2*margin);
+    const calc = (w,h) => {
+      const cols = Math.max(1, Math.floor((innerW + gap) / (w + gap)));
+      const rows = Math.max(1, Math.floor((innerH + gap) / (h + gap)));
+      return {cols,rows,cap:cols*rows,w,h,rot:false};
+    };
+    let best=calc(pw,ph);
+    if(els.allowRotate.checked){
+      const alt=calc(ph,pw); alt.rot=true;
+      if(alt.cap>best.cap) best=alt;
+    }
+    return {sw,sh,pw:best.w,ph:best.h,gap,margin,cols:best.cols,rows:best.rows,capacity:best.cap,rotated:best.rot};
+  }
+
+  function requestedCount(cfg){
+    const n=Math.max(1,Math.floor(parseFloat(els.countInput.value)||1));
+    if(els.maxFill.checked){ els.countInput.value=cfg.capacity; return cfg.capacity; }
+    return n;
+  }
+
+  function getBaseImage(){return state.adjustedImg||state.img}
+  function getDisplayImage(){return state.rotatedImg||getBaseImage()}
+  function updateRotatedImage(){
+    if(!state.img||state.imageRotation===0){state.rotatedImg=null;return}
+    const base=getBaseImage();
+    const sideways=state.imageRotation===90||state.imageRotation===270;
+    const c=document.createElement('canvas');c.width=sideways?base.height:base.width;c.height=sideways?base.width:base.height;
+    const ctx=c.getContext('2d');ctx.translate(c.width/2,c.height/2);ctx.rotate(state.imageRotation*Math.PI/180);ctx.drawImage(base,-base.width/2,-base.height/2);
+    state.rotatedImg=c;
+  }
+
+  function signedValue(value){const n=parseInt(value)||0;return n>0?'+'+n:String(n)}
+  function applyColorCorrection(){
+    const r=parseInt(els.redRange.value)||0,g=parseInt(els.greenRange.value)||0,b=parseInt(els.blueRange.value)||0;
+    els.redVal.textContent=signedValue(r);els.greenVal.textContent=signedValue(g);els.blueVal.textContent=signedValue(b);
+    if(!state.img){renderAll();return}
+    if(r===0&&g===0&&b===0){state.adjustedImg=null;updateRotatedImage();renderAll();return}
+    const c=document.createElement('canvas');c.width=state.img.width;c.height=state.img.height;
+    const ctx=c.getContext('2d',{willReadFrequently:true});ctx.drawImage(state.img,0,0);
+    const imageData=ctx.getImageData(0,0,c.width,c.height),data=imageData.data,dr=r*2.55,dg=g*2.55,db=b*2.55;
+    for(let i=0;i<data.length;i+=4){data[i]=Math.max(0,Math.min(255,data[i]+dr));data[i+1]=Math.max(0,Math.min(255,data[i+1]+dg));data[i+2]=Math.max(0,Math.min(255,data[i+2]+db))}
+    ctx.putImageData(imageData,0,0);state.adjustedImg=c;updateRotatedImage();renderAll();
+  }
+  let colorFrame=0;
+  function scheduleColorCorrection(){cancelAnimationFrame(colorFrame);colorFrame=requestAnimationFrame(applyColorCorrection)}
+
+  function cropSourceForBox(boxW, boxH){
+    if(!state.img) return null;
+    const img=getDisplayImage(), targetRatio=boxW/boxH, imgRatio=img.width/img.height;
+    let baseSW,baseSH;
+    if(imgRatio>targetRatio){ baseSH=img.height; baseSW=baseSH*targetRatio; }
+    else{ baseSW=img.width; baseSH=baseSW/targetRatio; }
+    let sw=baseSW/state.zoom, sh=baseSH/state.zoom;
+    const maxDx=(img.width-sw)/2, maxDy=(img.height-sh)/2;
+    const normX=Math.max(-1,Math.min(1,state.offsetX/100));
+    const normY=Math.max(-1,Math.min(1,state.offsetY/100));
+    let sx=(img.width-sw)/2 + normX*maxDx;
+    let sy=(img.height-sh)/2 + normY*maxDy;
+    sx=Math.max(0,Math.min(img.width-sw,sx)); sy=Math.max(0,Math.min(img.height-sh,sy));
+    return {sx,sy,sw,sh};
+  }
+
+  function drawCropPreview(){
+    const c=els.cropCanvas, ctx=c.getContext('2d');
+    ctx.clearRect(0,0,c.width,c.height); ctx.fillStyle='#0e1013'; ctx.fillRect(0,0,c.width,c.height);
+    const pw=cm(els.photoW.value), ph=cm(els.photoH.value);
+    const ratio=pw/ph; let w=c.width-32,h=w/ratio;
+    if(h>c.height-24){h=c.height-24;w=h*ratio;}
+    const x=(c.width-w)/2,y=(c.height-h)/2;
+    if(state.img){
+      const src=cropSourceForBox(pw,ph),img=getDisplayImage();
+      ctx.save(); ctx.beginPath(); ctx.rect(x,y,w,h);ctx.clip();
+      ctx.drawImage(img,src.sx,src.sy,src.sw,src.sh,x,y,w,h); ctx.restore();
+    } else {
+      ctx.fillStyle='#191d22';ctx.fillRect(x,y,w,h);ctx.fillStyle='#7f8792';ctx.font='12px system-ui';ctx.textAlign='center';ctx.fillText('Загрузите фотографию',c.width/2,c.height/2);
+    }
+    ctx.strokeStyle='rgba(255,255,255,.85)';ctx.lineWidth=1;ctx.strokeRect(x+.5,y+.5,w-1,h-1);
+    const m=10;ctx.fillStyle='rgba(0,0,0,.45)';
+    ctx.fillRect(0,0,c.width,y);ctx.fillRect(0,y,x,h);ctx.fillRect(x+w,y,c.width-x-w,h);ctx.fillRect(0,y+h,c.width,c.height-y-h);
+    ctx.strokeStyle='rgba(226,59,59,.75)';ctx.setLineDash([6,5]);ctx.strokeRect(x+.5,y+.5,w-1,h-1);ctx.setLineDash([]);
+  }
+
+  function drawCutLine(ctx,x1,y1,x2,y2){
+    const style=els.cutStyle.value;if(style==='none') return;
+    const a=(parseInt(els.cutAlpha.value)||45)/100;
+    ctx.save();ctx.strokeStyle=`rgba(120,120,120,${a})`;ctx.lineWidth=1;
+    if(style==='dashed') ctx.setLineDash([6,5]);
+    if(style==='dotted') ctx.setLineDash([1,4]);
+    if(style==='corners'){
+      const length=Math.hypot(x2-x1,y2-y1), L=Math.min(14,length*.16);
+      const ux=(x2-x1)/length,uy=(y2-y1)/length;
+      ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x1+ux*L,y1+uy*L);ctx.moveTo(x2-ux*L,y2-uy*L);ctx.lineTo(x2,y2);ctx.stroke();ctx.restore();return;
+    }
+    ctx.beginPath();ctx.moveTo(Math.round(x1)+.5,Math.round(y1)+.5);ctx.lineTo(Math.round(x2)+.5,Math.round(y2)+.5);ctx.stroke();ctx.restore();
+  }
+
+  function drawCenterCross(ctx,x,y,w,h){
+    const cx=Math.round(x+w/2)+.5,cy=Math.round(y+h/2)+.5;
+    ctx.save();ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();
+    ctx.strokeStyle='#e23b3b';ctx.lineWidth=1;ctx.setLineDash([]);
+    ctx.beginPath();ctx.moveTo(cx,y);ctx.lineTo(cx,y+h);ctx.moveTo(x,cy);ctx.lineTo(x+w,cy);ctx.stroke();ctx.restore();
+  }
+  function applySheetPreset(){
+    if(els.sheetPreset.value==='custom')return;
+    let [w,h]=els.sheetPreset.value.split('x').map(Number);
+    if(state.rotated)[w,h]=[h,w];
+    els.sheetW.value=w;els.sheetH.value=h;
+  }
+  function sheetFormatName(){
+    if(els.sheetPreset.value==='custom')return '';
+    const label=els.sheetPreset.selectedOptions[0]?.textContent||'';
+    const match=label.match(/^A\d+/i);
+    return match?match[0].toUpperCase():'';
+  }
+
+  function groupPlacement(cfg,count){
+    const usedCols=Math.min(cfg.cols,count),usedRows=Math.ceil(count/cfg.cols);
+    const width=usedCols*cfg.pw+Math.max(0,usedCols-1)*cfg.gap;
+    const height=usedRows*cfg.ph+Math.max(0,usedRows-1)*cfg.gap;
+    return {centerX:(cfg.sw-width)/2,centerY:(cfg.sh-height)/2,width,height};
+  }
+
+  function formatOffsetMm(cmValue){
+    const mmValue=Math.abs(cmValue)<.005?0:cmValue*10;
+    return `${mmValue>0?'+':''}${mmValue.toFixed(1).replace('.',',')} мм`;
+  }
+
+  function drawSheetGuides(ctx){
+    if(!state.snapX&&!state.snapY)return;
+    ctx.save();ctx.strokeStyle='#e23b3b';ctx.lineWidth=1;ctx.setLineDash([]);
+    ctx.shadowColor='rgba(255,255,255,.9)';ctx.shadowBlur=2;ctx.beginPath();
+    if(state.snapX){const x=Math.round(ctx.canvas.width/2)+.5;ctx.moveTo(x,0);ctx.lineTo(x,ctx.canvas.height)}
+    if(state.snapY){const y=Math.round(ctx.canvas.height/2)+.5;ctx.moveTo(0,y);ctx.lineTo(ctx.canvas.width,y)}
+    ctx.stroke();ctx.restore();
+  }
+
+  function renderSheet(forExport=false){
+    const cfg=layoutConfig(); const count=requestedCount(cfg);
+    const outW=Math.max(1,Math.round(cfg.sw*PX_PER_CM)), outH=Math.max(1,Math.round(cfg.sh*PX_PER_CM));
+    let scale=1;
+    if(!forExport){
+      const areaW=Math.max(220,els.canvasArea.clientWidth-90), areaH=Math.max(220,els.canvasArea.clientHeight-80);
+      scale=Math.min(areaW/outW,areaH/outH,0.75);
+    }
+    const cw=Math.max(1,Math.round(outW*scale)), ch=Math.max(1,Math.round(outH*scale));
+    const c=forExport?document.createElement('canvas'):els.sheetCanvas; c.width=forExport?outW:cw;c.height=forExport?outH:ch;
+    const ctx=c.getContext('2d'); ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width,c.height);
+    const pxPerCm=PX_PER_CM*(forExport?1:scale);
+    if(!forExport) sheetPixelsPerCm=pxPerCm;
+    const photoW=cfg.pw*pxPerCm,photoH=cfg.ph*pxPerCm,gap=cfg.gap*pxPerCm,margin=cfg.margin*pxPerCm;
+    const src=cropSourceForBox(cfg.pw,cfg.ph),displayImg=getDisplayImage();
+    let fits=0;
+    for(let i=0;i<count;i++){
+      const col=i%cfg.cols, row=Math.floor(i/cfg.cols);
+      const x=margin+col*(photoW+gap)+state.sheetX*pxPerCm, y=margin+row*(photoH+gap)+state.sheetY*pxPerCm;
+      const fully=x>=0&&y>=0&&x+photoW<=c.width&&y+photoH<=c.height;
+      if(fully) fits++;
+      if(state.img && src){
+        ctx.save();ctx.beginPath();ctx.rect(x,y,photoW,photoH);ctx.clip();
+        ctx.drawImage(displayImg,src.sx,src.sy,src.sw,src.sh,x,y,photoW,photoH);ctx.restore();
+      } else {
+        ctx.fillStyle='#eceff2';ctx.fillRect(x,y,photoW,photoH);ctx.fillStyle='#a7adb6';ctx.font=`${Math.max(10,12*(forExport?3:1))}px system-ui`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('PHOTO',x+photoW/2,y+photoH/2);
+      }
+      if(state.drag && !forExport && state.img) drawCenterCross(ctx,x,y,photoW,photoH);
+    }
+    for(let i=0;i<count;i++){
+      const col=i%cfg.cols,row=Math.floor(i/cfg.cols);
+      const x=margin+col*(photoW+gap)+state.sheetX*pxPerCm,y=margin+row*(photoH+gap)+state.sheetY*pxPerCm;
+      if(col<cfg.cols-1 && i+1<count){
+        const cutX=x+photoW+gap/2;
+        drawCutLine(ctx,cutX,y,cutX,y+photoH);
+      }
+      if(i+cfg.cols<count){
+        const cutY=y+photoH+gap/2;
+        drawCutLine(ctx,x,cutY,x+photoW,cutY);
+      }
+    }
+    if(!forExport)drawSheetGuides(ctx);
+    if(!forExport){
+      const centered=groupPlacement(cfg,count);
+      lastGroupCenter=centered;
+      els.sheetOffsetX.textContent=formatOffsetMm(state.sheetX-centered.centerX);
+      els.sheetOffsetY.textContent=formatOffsetMm(state.sheetY-centered.centerY);
+      const formatName=sheetFormatName();
+      els.sheetInfo.textContent=`${cfg.sw} × ${cfg.sh} см${formatName?` (${formatName})`:''}`;els.photoInfo.textContent=`${cm(els.photoW.value)} × ${cm(els.photoH.value)} см`;
+      els.pixelInfo.textContent=`${outW} × ${outH} px`;els.fitsCount.textContent=fits;els.capacity.textContent=cfg.capacity;
+      const overflow=fits<count; els.overflowNote.style.display=overflow?'block':'none';els.fitDot.className='dot'+(overflow?' warn':'');els.fitText.textContent=overflow?`Полностью помещается ${fits} из ${count}`:`Все ${count} фотографий помещаются`;
+    }
+    return {canvas:c,cfg,count,fits,outW,outH};
+  }
+
+  function renderAll(preservePosition=false){
+    if(preservePosition&&lastGroupCenter){
+      const dx=state.sheetX-lastGroupCenter.centerX,dy=state.sheetY-lastGroupCenter.centerY;
+      const cfg=layoutConfig(),nextCenter=groupPlacement(cfg,requestedCount(cfg));
+      state.sheetX=nextCenter.centerX+dx;state.sheetY=nextCenter.centerY+dy;
+    }
+    els.photoCustomRow.hidden=els.photoPreset.value!=='custom';
+    els.sheetCustomRow.hidden=els.sheetPreset.value!=='custom';
+    els.marginRow.style.display=els.useMargin.checked?'grid':'none';
+    els.redVal.textContent=signedValue(els.redRange.value);els.greenVal.textContent=signedValue(els.greenRange.value);els.blueVal.textContent=signedValue(els.blueRange.value);
+    els.alphaVal.textContent=els.cutAlpha.value+'%';els.qualityVal.textContent=els.qualityRange.value+'%';els.zoomVal.textContent=Math.round(state.zoom*100)+'%';drawCropPreview();renderSheet(false);
+  }
+
+  function exportImage(){
+    const {canvas}=renderSheet(true); const fmt=els.formatSelect.value;
+    const mime=fmt==='png'?'image/png':'image/jpeg'; const q=(parseInt(els.qualityRange.value)||95)/100;
+    const url=canvas.toDataURL(mime,q); const a=document.createElement('a');
+    const cfg=layoutConfig(); a.href=url;a.download=`photo-sheet_${cfg.sw}x${cfg.sh}cm_300dpi.${fmt==='png'?'png':'jpg'}`;document.body.appendChild(a);a.click();a.remove();
+  }
+
+  function loadPhoto(file){
+    if(!file || !file.type.startsWith('image/')){
+      els.photoHint.textContent='Можно загрузить только файл изображения.';
+      return;
+    }
+    const url=URL.createObjectURL(file), img=new Image();
+    img.onload=()=>{state.img=img;state.adjustedImg=null;state.rotatedImg=null;state.imageRotation=0;state.zoom=1;state.offsetX=0;state.offsetY=0;els.zoomRange.value=100;els.offsetX.value=0;els.offsetY.value=0;els.redRange.value=0;els.greenRange.value=0;els.blueRange.value=0;els.photoHint.textContent='Фото загружено. Двигайте его мышью, колесо — масштаб. Можно перетащить другое фото для замены.';renderAll();URL.revokeObjectURL(url)};
+    img.onerror=()=>{els.photoHint.textContent='Не удалось открыть изображение. Попробуйте другой файл.';URL.revokeObjectURL(url)};
+    img.src=url;
+  }
+
+  function loadDefaultPhoto(){
+    const index=Math.random()<.5?0:1,filename=index===0?'1.png':'2.png',img=new Image();
+    img.onload=()=>{
+      state.img=img;state.adjustedImg=null;state.rotatedImg=null;state.imageRotation=0;state.zoom=1;state.offsetX=0;state.offsetY=0;
+      els.zoomRange.value=100;els.offsetX.value=0;els.offsetY.value=0;els.redRange.value=0;els.greenRange.value=0;els.blueRange.value=0;
+      els.photoHint.textContent=`Загружено тестовое изображение ${filename}. Двигайте его мышью, колесо — масштаб.`;renderAll();
+    };
+    img.onerror=()=>{els.photoHint.textContent='Не удалось загрузить тестовое изображение. Выберите фотографию вручную.'};
+    img.src=(window.PHOTO_SAMPLES&&window.PHOTO_SAMPLES[index])||filename;
+  }
+
+  els.fileInput.addEventListener('change',e=>{loadPhoto(e.target.files&&e.target.files[0]);e.target.value=''});
+  ['dragenter','dragover'].forEach(type=>els.photoDropZone.addEventListener(type,e=>{e.preventDefault();e.stopPropagation();if(e.dataTransfer)e.dataTransfer.dropEffect='copy';els.photoDropZone.classList.add('drag-over')}));
+  ['dragleave','drop'].forEach(type=>els.photoDropZone.addEventListener(type,e=>{e.preventDefault();e.stopPropagation();els.photoDropZone.classList.remove('drag-over')}));
+  els.photoDropZone.addEventListener('drop',e=>loadPhoto(e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0]));
+  els.photoPreset.addEventListener('change',()=>{setPairFromPreset(els.photoPreset,els.photoW,els.photoH);renderAll(true)});
+  els.sheetPreset.addEventListener('change',()=>{applySheetPreset();renderAll(true)});
+  [els.photoW,els.photoH].forEach(e=>e.addEventListener('input',()=>{els.photoPreset.value='custom';renderAll(true)}));
+  [els.sheetW,els.sheetH].forEach(e=>e.addEventListener('input',()=>{els.sheetPreset.value='custom';renderAll(true)}));
+  [els.countInput,els.gapInput,els.marginInput].forEach(e=>e.addEventListener('input',()=>renderAll(true)));
+  [els.maxFill,els.allowRotate,els.useMargin].forEach(e=>e.addEventListener('change',()=>renderAll(true)));
+  [els.cutStyle,els.cutAlpha].forEach(e=>e.addEventListener('input',renderAll));
+  els.formatSelect.addEventListener('change',()=>{els.qualityWrap.style.display=els.formatSelect.value==='jpg'?'block':'none';renderAll()});
+  els.qualityRange.addEventListener('input',renderAll);
+  els.zoomRange.addEventListener('input',()=>{state.zoom=parseInt(els.zoomRange.value)/100;renderAll()});
+  els.offsetX.addEventListener('input',()=>{state.offsetX=parseFloat(els.offsetX.value)||0;renderAll()});
+  els.offsetY.addEventListener('input',()=>{state.offsetY=parseFloat(els.offsetY.value)||0;renderAll()});
+  els.resetCropBtn.addEventListener('click',()=>{state.zoom=1;state.offsetX=0;state.offsetY=0;els.zoomRange.value=100;els.offsetX.value=0;els.offsetY.value=0;renderAll()});
+  [els.redRange,els.greenRange,els.blueRange].forEach(e=>e.addEventListener('input',scheduleColorCorrection));
+  els.resetColorBtn.addEventListener('click',()=>{els.redRange.value=0;els.greenRange.value=0;els.blueRange.value=0;applyColorCorrection()});
+  els.rotateSheetBtn.addEventListener('click',()=>{
+    state.rotated=!state.rotated;
+    const w=els.sheetW.value;els.sheetW.value=els.sheetH.value;els.sheetH.value=w;
+    els.rotateSheetBtn.classList.toggle('active',state.rotated);els.rotateSheetBtn.setAttribute('aria-pressed',String(state.rotated));
+    els.rotateSheetBtn.title=state.rotated?'Альбомная ориентация листа':'Книжная ориентация листа';
+    renderAll(true);
+  });
+  els.rotatePhotoBtn.addEventListener('click',()=>{if(!state.img)return;state.imageRotation=(state.imageRotation+90)%360;const x=state.offsetX;state.offsetX=-state.offsetY;state.offsetY=x;els.offsetX.value=state.offsetX.toFixed(1);els.offsetY.value=state.offsetY.toFixed(1);updateRotatedImage();renderAll()});
+  els.exportBtn.addEventListener('click',exportImage);
+
+  // Store the group position in centimetres so resizing and export keep it.
+  let sheetPixelsPerCm=1, sheetDrag=null;
+  els.sheetCanvas.title='Перетаскивайте фотографии целиком. Shift — фиксация оси. У центра срабатывает привязка.';
+  els.centerSheetBtn.addEventListener('click',()=>{
+    const cfg=layoutConfig(),centered=groupPlacement(cfg,requestedCount(cfg));
+    state.sheetX=centered.centerX;state.sheetY=centered.centerY;state.snapX=true;state.snapY=true;
+    renderSheet(false);
+    setTimeout(()=>{state.snapX=false;state.snapY=false;renderSheet(false)},450);
+  });
+  els.sheetCanvas.addEventListener('pointerdown',e=>{
+    if(e.button!==0 || !e.isPrimary || sheetDrag)return;
+    e.preventDefault();
+    const rect=els.sheetCanvas.getBoundingClientRect();
+    const cfg=layoutConfig(),centered=groupPlacement(cfg,requestedCount(cfg));
+    sheetDrag={id:e.pointerId,x:e.clientX,y:e.clientY,baseX:state.sheetX,baseY:state.sheetY,centerX:centered.centerX,centerY:centered.centerY,
+      scaleX:els.sheetCanvas.width/rect.width/sheetPixelsPerCm,
+      scaleY:els.sheetCanvas.height/rect.height/sheetPixelsPerCm,axis:null};
+    els.sheetCanvas.setPointerCapture(e.pointerId);
+    els.sheetCanvas.classList.add('dragging');
+  });
+  els.sheetCanvas.addEventListener('pointermove',e=>{
+    const d=sheetDrag;if(!d || e.pointerId!==d.id)return;
+    if(!(e.buttons&1)){finishSheetDrag();return;}
+    const dx=e.clientX-d.x,dy=e.clientY-d.y;
+    if(!d.axis){
+      if(Math.hypot(dx,dy)<4)return;
+      d.axis=Math.abs(dx)>=Math.abs(dy)?'x':'y';
+    }
+    let nextX=d.baseX+(e.shiftKey && d.axis==='y'?0:dx*d.scaleX);
+    let nextY=d.baseY+(e.shiftKey && d.axis==='x'?0:dy*d.scaleY);
+    const canMoveX=!(e.shiftKey&&d.axis==='y'),canMoveY=!(e.shiftKey&&d.axis==='x');
+    state.snapX=canMoveX&&Math.abs(nextX-d.centerX)<=7*d.scaleX;
+    state.snapY=canMoveY&&Math.abs(nextY-d.centerY)<=7*d.scaleY;
+    if(state.snapX)nextX=d.centerX;
+    if(state.snapY)nextY=d.centerY;
+    state.sheetX=nextX;state.sheetY=nextY;
+    renderSheet(false);
+  });
+  function finishSheetDrag(){
+    if(!sheetDrag)return;
+    const id=sheetDrag.id;sheetDrag=null;
+    els.sheetCanvas.classList.remove('dragging');state.snapX=false;state.snapY=false;
+    if(els.sheetCanvas.hasPointerCapture(id))els.sheetCanvas.releasePointerCapture(id);
+    renderSheet(false);
+  }
+  ['pointerup','pointercancel','lostpointercapture'].forEach(type=>
+    els.sheetCanvas.addEventListener(type,e=>{if(sheetDrag && e.pointerId===sheetDrag.id)finishSheetDrag()}));
+  window.addEventListener('blur',finishSheetDrag);
+
+  els.cropCanvas.addEventListener('mousedown',e=>{if(!state.img)return;state.drag=true;state.lastX=e.clientX;state.lastY=e.clientY;els.cropCanvas.classList.add('dragging');renderAll()});
+  window.addEventListener('mouseup',()=>{if(!state.drag)return;state.drag=false;els.cropCanvas.classList.remove('dragging');renderAll()});
+  window.addEventListener('mousemove',e=>{if(!state.drag)return;const dx=e.clientX-state.lastX,dy=e.clientY-state.lastY;state.lastX=e.clientX;state.lastY=e.clientY;state.offsetX=Math.max(-100,Math.min(100,state.offsetX+dx*.9));state.offsetY=Math.max(-100,Math.min(100,state.offsetY+dy*.9));els.offsetX.value=state.offsetX.toFixed(1);els.offsetY.value=state.offsetY.toFixed(1);renderAll()});
+  els.cropCanvas.addEventListener('wheel',e=>{if(!state.img)return;e.preventDefault();state.zoom=Math.max(1,Math.min(3,state.zoom+(e.deltaY<0?.08:-.08)));els.zoomRange.value=Math.round(state.zoom*100);renderAll()},{passive:false});
+  window.addEventListener('resize',renderAll);
+  applySheetPreset();
+  renderAll();
+  loadDefaultPhoto();
+})();
+</script>
+</body>
+</html>
