@@ -354,11 +354,11 @@
       const ux=(x2-x1)/length,uy=(y2-y1)/length;
       ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x1+ux*L,y1+uy*L);ctx.moveTo(x2-ux*L,y2-uy*L);ctx.lineTo(x2,y2);ctx.stroke();ctx.restore();return;
     }
-    ctx.beginPath();ctx.moveTo(Math.round(x1)+.5,Math.round(y1)+.5);ctx.lineTo(Math.round(x2)+.5,Math.round(y2)+.5);ctx.stroke();ctx.restore();
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();ctx.restore();
   }
 
   function drawCenterCross(ctx,x,y,w,h){
-    const cx=Math.round(x+w/2)+.5,cy=Math.round(y+h/2)+.5;
+    const cx=x+w/2,cy=y+h/2;
     ctx.save();ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();
     ctx.strokeStyle='#e23b3b';ctx.lineWidth=1;ctx.setLineDash([]);
     ctx.beginPath();ctx.moveTo(cx,y);ctx.lineTo(cx,y+h);ctx.moveTo(x,cy);ctx.lineTo(x+w,cy);ctx.stroke();ctx.restore();
