@@ -67,8 +67,14 @@
   .hint{font-size:10px;color:#8f96a1;line-height:1.45;margin-top:7px}
   .value{color:#fff;font-variant-numeric:tabular-nums}
   .workspace{display:flex;flex-direction:column;min-width:0;min-height:0}
-  .topbar{height:58px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 15px;gap:12px}
+  .topbar{min-height:58px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:9px 15px;gap:12px}
   .topbar .left,.topbar .right{display:flex;align-items:center;gap:8px}
+  .top-setting{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:11px}
+  .top-setting select{width:auto;max-width:210px;padding:7px 28px 7px 9px}
+  .top-custom{display:grid;grid-template-columns:72px 72px;gap:5px}
+  .top-custom input{padding:7px}
+  .top-rotate{padding:7px 10px}
+  .top-rotate.active{background:var(--accent);border-color:var(--accent2)}
   .status{font-size:12px;color:var(--muted)}
   .status strong{color:#fff}
   .canvas-area{flex:1;min-height:0;overflow:auto;background:radial-gradient(circle at 50% 10%,#1d2127,#0e1013 70%);display:flex;align-items:flex-start;justify-content:center;padding:36px}
@@ -79,11 +85,13 @@
   .sheet-position b{color:#fff;font-variant-numeric:tabular-nums;font-size:11px}
   .center-sheet-btn{border:0;border-left:1px solid #3a404a;background:transparent;color:#ff7777;padding:1px 2px 1px 8px;font:700 10px system-ui;cursor:pointer}
   .center-sheet-btn:hover{color:#fff}
-  .rotate-sheet-btn{position:absolute;z-index:3;top:10px;right:10px;width:38px;height:38px;padding:0;border:1px solid rgba(255,255,255,.25);border-radius:10px;background:rgba(24,27,32,.88);color:#fff;font-size:21px;line-height:1;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.3);backdrop-filter:blur(6px)}
+  .rotate-sheet-btn{position:absolute;z-index:3;top:10px;right:10px;width:36px;height:36px;padding:0;border:1px solid rgba(255,255,255,.25);border-radius:9px;background:rgba(24,27,32,.88);color:#fff;font-size:20px;line-height:1;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.3);backdrop-filter:blur(6px)}
   .rotate-sheet-btn:hover{background:var(--accent);border-color:var(--accent2)}
   .rotate-sheet-btn.active{background:var(--accent);border-color:var(--accent2);box-shadow:0 0 0 2px rgba(226,59,59,.22),0 4px 14px rgba(0,0,0,.3)}
   .rotate-sheet-btn:focus-visible{outline:2px solid #fff;outline-offset:2px}
-  #rotatePhotoBtn{top:56px}
+  #rotatePhotoBtn{top:52px}
+  #sampleBtn{position:absolute;z-index:3;top:94px;right:10px;width:36px;height:36px;padding:0;border:1px solid rgba(255,255,255,.25);border-radius:9px;background:rgba(24,27,32,.88);color:#fff;font-size:13px;font-weight:700;line-height:1;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.3);backdrop-filter:blur(6px)}
+  .export-dock{padding:10px 14px 14px;border-top:1px solid var(--line);background:var(--panel);border-radius:0 0 20px 20px}
   .overflow-note{position:absolute;left:50%;top:-25px;transform:translateX(-50%);font-size:11px;color:#ffd0d0;background:rgba(226,59,59,.12);border:1px solid rgba(226,59,59,.35);padding:5px 8px;border-radius:999px;display:none;white-space:nowrap}
   .footer{border-top:1px solid var(--line);padding:10px 15px;display:flex;justify-content:space-between;gap:12px;font-size:11px;color:#888f99}
   .metric{display:inline-flex;gap:5px;align-items:center}
@@ -120,6 +128,7 @@
           <div class="drop-overlay" aria-hidden="true">Отпустите фото здесь</div>
           <button class="rotate-sheet-btn active" id="rotateSheetBtn" type="button" aria-label="Повернуть лист" aria-pressed="true" title="Альбомная ориентация листа">↔</button>
           <button class="rotate-sheet-btn" id="rotatePhotoBtn" type="button" aria-label="Повернуть фотографию на 90 градусов" title="Повернуть фотографию на 90°">↻</button>
+          <button id="sampleBtn" type="button" aria-label="Переключить тестовый образец" title="Образец 1">1</button>
         </div>
         <div class="hint" id="photoHint">Перетащите фото в область выше или выберите файл кнопкой. После загрузки двигайте фото мышью, колесо — масштаб.</div>
         <div class="separator"></div>
@@ -130,60 +139,17 @@
           <div><label>Сдвиг Y</label><input id="offsetY" type="number" value="0" step="1"></div>
         </div>
         <div class="separator"></div>
+        <label>Яркость <span class="value" id="brightnessVal">0</span></label>
+        <input id="brightnessRange" type="range" min="-50" max="50" value="0" step="1">
+        <label>Контрастность <span class="value" id="contrastVal">0</span></label>
+        <input id="contrastRange" type="range" min="-50" max="50" value="0" step="1">
         <label>Красный <span class="value" id="redVal">0</span></label>
-        <input id="redRange" type="range" min="-100" max="100" value="0" step="1">
+        <input id="redRange" type="range" min="-10" max="10" value="0" step="1">
         <label>Зелёный <span class="value" id="greenVal">0</span></label>
-        <input id="greenRange" type="range" min="-100" max="100" value="0" step="1">
+        <input id="greenRange" type="range" min="-10" max="10" value="0" step="1">
         <label>Синий <span class="value" id="blueVal">0</span></label>
-        <input id="blueRange" type="range" min="-100" max="100" value="0" step="1">
+        <input id="blueRange" type="range" min="-10" max="10" value="0" step="1">
         <button class="btn ghost" id="resetColorBtn" type="button" style="width:100%;margin-top:8px">Сбросить цвет</button>
-      </section>
-
-      <section class="section">
-        <h2>2. Размер фотографии <span>см</span></h2>
-        <label>Пресет</label>
-        <select id="photoPreset">
-          <option value="3.5x4.5">3.5 × 4.5 см — документы</option>
-          <option value="3x4">3 × 4 см</option>
-          <option value="4x6">4 × 6 см</option>
-          <option value="5x5">5 × 5 см</option>
-          <option value="5x7">5 × 7 см</option>
-          <option value="6x9">6 × 9 см</option>
-          <option value="custom">Свой размер</option>
-        </select>
-        <div class="row" id="photoCustomRow" style="margin-top:8px" hidden>
-          <div><label>Ширина</label><input id="photoW" type="number" value="3.5" min="0.5" step="0.1"></div>
-          <div><label>Высота</label><input id="photoH" type="number" value="4.5" min="0.5" step="0.1"></div>
-        </div>
-      </section>
-
-      <section class="section">
-        <h2>3. Лист <span>см</span></h2>
-        <label>Размер листа</label>
-        <select id="sheetPreset">
-          <optgroup label="Форматы фотопечати">
-            <option value="10x15">10 × 15</option>
-            <option value="9x13">9 × 13</option>
-            <option value="11x15">11 × 15</option>
-            <option value="13x18">13 × 18</option>
-            <option value="15x20">15 × 20</option>
-            <option value="15x21">15 × 21</option>
-            <option value="15x15">15 × 15</option>
-            <option value="18x24">18 × 24</option>
-            <option value="20x30">20 × 30</option>
-            <option value="21x30">21 × 30</option>
-          </optgroup>
-          <optgroup label="Точные форматы ISO A">
-            <option value="10.5x14.8">A6 — 10,5 × 14,8 см</option>
-            <option value="14.8x21">A5 — 14,8 × 21 см</option>
-            <option value="21x29.7">A4 — 21 × 29,7 см</option>
-          </optgroup>
-          <option value="custom">Свой размер</option>
-        </select>
-        <div class="row" id="sheetCustomRow" style="margin-top:8px" hidden>
-          <div><label>Ширина</label><input id="sheetW" type="number" value="10" min="1" step="0.1"></div>
-          <div><label>Высота</label><input id="sheetH" type="number" value="15" min="1" step="0.1"></div>
-        </div>
       </section>
 
       <section class="section">
@@ -191,12 +157,7 @@
         <label>Количество</label>
         <input id="countInput" type="number" min="1" max="200" value="8">
         <label class="check"><input id="maxFill" type="checkbox"> Заполнить лист максимально</label>
-        <label class="check"><input id="allowRotate" type="checkbox" checked> Автоповорот фото для лучшего заполнения</label>
-        <label class="check"><input id="useMargin" type="checkbox"> Поля по краям листа</label>
-        <div id="marginRow" class="row" style="display:none;margin-top:8px">
-          <div><label>Поля, мм</label><input id="marginInput" type="number" min="0" max="30" step="0.5" value="3"></div>
-          <div></div>
-        </div>
+        <label class="check"><input id="allowRotate" type="checkbox" checked> Авторазмещение фото для лучшего заполнения</label>
         <div class="crop-info">
           <div class="pill">Помещается полностью<b id="fitsCount">0</b></div>
           <div class="pill">Максимум на листе<b id="capacity">0</b></div>
@@ -242,17 +203,17 @@
             <input id="qualityRange" type="range" min="60" max="100" value="95">
           </div>
         </div>
-        <button class="btn red" style="width:100%;margin-top:4px" id="exportBtn">Экспортировать лист</button>
+        <div class="toolbar"><button class="btn ghost" id="saveProjectBtn" type="button">Сохранить JSON</button><label class="btn ghost file-btn">Открыть JSON<input id="projectInput" type="file" accept="application/json,.json"></label></div>
       </section>
     </div>
+    <div class="export-dock"><button class="btn red" style="width:100%" id="exportBtn">Экспортировать лист</button></div>
   </aside>
 
   <main class="workspace">
     <div class="topbar">
       <div class="left">
-        <span class="status">Лист: <strong id="sheetInfo">10 × 15 см</strong></span>
-        <span class="status">•</span>
-        <span class="status">Фото: <strong id="photoInfo">3.5 × 4.5 см</strong></span>
+        <div class="top-setting"><span>Лист</span><select id="sheetPreset"><optgroup label="Форматы фотопечати"><option value="10x15">10 × 15</option><option value="9x13">9 × 13</option><option value="11x15">11 × 15</option><option value="13x18">13 × 18</option><option value="15x20">15 × 20</option><option value="15x21">15 × 21</option><option value="15x15">15 × 15</option><option value="18x24">18 × 24</option><option value="20x30">20 × 30</option><option value="21x30">21 × 30</option></optgroup><optgroup label="Точные форматы ISO A"><option value="10.5x14.8">A6 — 10,5 × 14,8 см</option><option value="14.8x21">A5 — 14,8 × 21 см</option><option value="21x29.7">A4 — 21 × 29,7 см</option></optgroup><option value="custom">Свой размер</option></select><div class="top-custom" id="sheetCustomRow" hidden><input id="sheetW" aria-label="Ширина листа, см" type="number" value="10" min="1" step="0.1"><input id="sheetH" aria-label="Высота листа, см" type="number" value="15" min="1" step="0.1"></div></div>
+        <div class="top-setting"><span>Фото</span><select id="photoPreset"><option value="3.5x4.5">3.5 × 4.5 см — документы</option><option value="3x4">3 × 4 см</option><option value="4x6">4 × 6 см</option><option value="5x5">5 × 5 см</option><option value="5x7">5 × 7 см</option><option value="6x9">6 × 9 см</option><option value="custom">Свой размер</option></select><div class="top-custom" id="photoCustomRow" hidden><input id="photoW" aria-label="Ширина фотографии, см" type="number" value="3.5" min="0.5" step="0.1"><input id="photoH" aria-label="Высота фотографии, см" type="number" value="4.5" min="0.5" step="0.1"></div></div>
       </div>
       <div class="right">
         <span class="status">Выход: <strong id="pixelInfo">1181 × 1772 px</strong></span>
@@ -278,14 +239,14 @@
   const PX_PER_CM = DPI / 2.54;
   const $ = id => document.getElementById(id);
   const els = {
-    fileInput:$('fileInput'), photoDropZone:$('photoDropZone'), photoHint:$('photoHint'), cropCanvas:$('cropCanvas'), zoomRange:$('zoomRange'), zoomVal:$('zoomVal'), offsetX:$('offsetX'), offsetY:$('offsetY'), resetCropBtn:$('resetCropBtn'), redRange:$('redRange'), greenRange:$('greenRange'), blueRange:$('blueRange'), redVal:$('redVal'), greenVal:$('greenVal'), blueVal:$('blueVal'), resetColorBtn:$('resetColorBtn'),
+    fileInput:$('fileInput'), photoDropZone:$('photoDropZone'), photoHint:$('photoHint'), cropCanvas:$('cropCanvas'), zoomRange:$('zoomRange'), zoomVal:$('zoomVal'), offsetX:$('offsetX'), offsetY:$('offsetY'), resetCropBtn:$('resetCropBtn'), brightnessRange:$('brightnessRange'), contrastRange:$('contrastRange'), brightnessVal:$('brightnessVal'), contrastVal:$('contrastVal'), redRange:$('redRange'), greenRange:$('greenRange'), blueRange:$('blueRange'), redVal:$('redVal'), greenVal:$('greenVal'), blueVal:$('blueVal'), resetColorBtn:$('resetColorBtn'),
     photoPreset:$('photoPreset'), photoCustomRow:$('photoCustomRow'), photoW:$('photoW'), photoH:$('photoH'), sheetPreset:$('sheetPreset'), sheetCustomRow:$('sheetCustomRow'), sheetW:$('sheetW'), sheetH:$('sheetH'),
-    rotateSheetBtn:$('rotateSheetBtn'), rotatePhotoBtn:$('rotatePhotoBtn'), countInput:$('countInput'), gapInput:$('gapInput'), maxFill:$('maxFill'), allowRotate:$('allowRotate'), useMargin:$('useMargin'), marginInput:$('marginInput'), marginRow:$('marginRow'),
-    cutStyle:$('cutStyle'), cutAlpha:$('cutAlpha'), alphaVal:$('alphaVal'), formatSelect:$('formatSelect'), qualityWrap:$('qualityWrap'), qualityRange:$('qualityRange'), qualityVal:$('qualityVal'), exportBtn:$('exportBtn'),
-    sheetCanvas:$('sheetCanvas'), sheetWrap:$('sheetWrap'), canvasArea:$('canvasArea'), overflowNote:$('overflowNote'), sheetOffsetX:$('sheetOffsetX'), sheetOffsetY:$('sheetOffsetY'), centerSheetBtn:$('centerSheetBtn'), sheetInfo:$('sheetInfo'), photoInfo:$('photoInfo'), pixelInfo:$('pixelInfo'), fitsCount:$('fitsCount'), capacity:$('capacity'), fitDot:$('fitDot'), fitText:$('fitText')
+    rotateSheetBtn:$('rotateSheetBtn'), rotatePhotoBtn:$('rotatePhotoBtn'), sampleBtn:$('sampleBtn'), countInput:$('countInput'), gapInput:$('gapInput'), maxFill:$('maxFill'), allowRotate:$('allowRotate'),
+    cutStyle:$('cutStyle'), cutAlpha:$('cutAlpha'), alphaVal:$('alphaVal'), formatSelect:$('formatSelect'), qualityWrap:$('qualityWrap'), qualityRange:$('qualityRange'), qualityVal:$('qualityVal'), exportBtn:$('exportBtn'), saveProjectBtn:$('saveProjectBtn'), projectInput:$('projectInput'),
+    sheetCanvas:$('sheetCanvas'), sheetWrap:$('sheetWrap'), canvasArea:$('canvasArea'), overflowNote:$('overflowNote'), sheetOffsetX:$('sheetOffsetX'), sheetOffsetY:$('sheetOffsetY'), centerSheetBtn:$('centerSheetBtn'), pixelInfo:$('pixelInfo'), fitsCount:$('fitsCount'), capacity:$('capacity'), fitDot:$('fitDot'), fitText:$('fitText')
   };
 
-  const state = { img:null, adjustedImg:null, rotatedImg:null, imageRotation:0, zoom:1, offsetX:0, offsetY:0, drag:false, lastX:0, lastY:0, rotated:true, sheetX:0, sheetY:0, snapX:false, snapY:false };
+  const state = { img:null, adjustedImg:null, rotatedImg:null, imageRotation:0, zoom:1, offsetX:0, offsetY:0, drag:false, lastX:0, lastY:0, rotated:true, sheetX:0, sheetY:0, snapX:false, snapY:false, sampleIndex:0, imageData:null };
   let lastGroupCenter=null;
 
   function cm(v){ return Math.max(0.01, parseFloat(v)||0.01); }
@@ -298,7 +259,7 @@
     const sw=cm(els.sheetW.value), sh=cm(els.sheetH.value);
     let pw=cm(els.photoW.value), ph=cm(els.photoH.value);
     const gap=mm(els.gapInput.value);
-    const margin=els.useMargin.checked ? mm(els.marginInput.value) : 0;
+    const margin=0;
     const innerW=Math.max(0,sw-2*margin), innerH=Math.max(0,sh-2*margin);
     const calc = (w,h) => {
       const cols = Math.max(1, Math.floor((innerW + gap) / (w + gap)));
@@ -332,14 +293,15 @@
 
   function signedValue(value){const n=parseInt(value)||0;return n>0?'+'+n:String(n)}
   function applyColorCorrection(){
-    const r=parseInt(els.redRange.value)||0,g=parseInt(els.greenRange.value)||0,b=parseInt(els.blueRange.value)||0;
+    const brightness=parseInt(els.brightnessRange.value)||0,contrast=parseInt(els.contrastRange.value)||0,r=parseInt(els.redRange.value)||0,g=parseInt(els.greenRange.value)||0,b=parseInt(els.blueRange.value)||0;
+    els.brightnessVal.textContent=signedValue(brightness);els.contrastVal.textContent=signedValue(contrast);
     els.redVal.textContent=signedValue(r);els.greenVal.textContent=signedValue(g);els.blueVal.textContent=signedValue(b);
     if(!state.img){renderAll();return}
-    if(r===0&&g===0&&b===0){state.adjustedImg=null;updateRotatedImage();renderAll();return}
+    if(brightness===0&&contrast===0&&r===0&&g===0&&b===0){state.adjustedImg=null;updateRotatedImage();renderAll();return}
     const c=document.createElement('canvas');c.width=state.img.width;c.height=state.img.height;
     const ctx=c.getContext('2d',{willReadFrequently:true});ctx.drawImage(state.img,0,0);
-    const imageData=ctx.getImageData(0,0,c.width,c.height),data=imageData.data,dr=r*2.55,dg=g*2.55,db=b*2.55;
-    for(let i=0;i<data.length;i+=4){data[i]=Math.max(0,Math.min(255,data[i]+dr));data[i+1]=Math.max(0,Math.min(255,data[i+1]+dg));data[i+2]=Math.max(0,Math.min(255,data[i+2]+db))}
+    const imageData=ctx.getImageData(0,0,c.width,c.height),data=imageData.data,dr=r*2.55,dg=g*2.55,db=b*2.55,bright=Math.pow(2,brightness/100),cont=1+contrast/100;
+    for(let i=0;i<data.length;i+=4){data[i]=Math.max(0,Math.min(255,(data[i]*bright-128)*cont+128+dr));data[i+1]=Math.max(0,Math.min(255,(data[i+1]*bright-128)*cont+128+dg));data[i+2]=Math.max(0,Math.min(255,(data[i+2]*bright-128)*cont+128+db))}
     ctx.putImageData(imageData,0,0);state.adjustedImg=c;updateRotatedImage();renderAll();
   }
   let colorFrame=0;
@@ -482,8 +444,6 @@
       lastGroupCenter=centered;
       els.sheetOffsetX.textContent=formatOffsetMm(state.sheetX-centered.centerX);
       els.sheetOffsetY.textContent=formatOffsetMm(state.sheetY-centered.centerY);
-      const formatName=sheetFormatName();
-      els.sheetInfo.textContent=`${cfg.sw} × ${cfg.sh} см${formatName?` (${formatName})`:''}`;els.photoInfo.textContent=`${cm(els.photoW.value)} × ${cm(els.photoH.value)} см`;
       els.pixelInfo.textContent=`${outW} × ${outH} px`;els.fitsCount.textContent=fits;els.capacity.textContent=cfg.capacity;
       const overflow=fits<count; els.overflowNote.style.display=overflow?'block':'none';els.fitDot.className='dot'+(overflow?' warn':'');els.fitText.textContent=overflow?`Полностью помещается ${fits} из ${count}`:`Все ${count} фотографий помещаются`;
     }
@@ -498,9 +458,8 @@
     }
     els.photoCustomRow.hidden=els.photoPreset.value!=='custom';
     els.sheetCustomRow.hidden=els.sheetPreset.value!=='custom';
-    els.marginRow.style.display=els.useMargin.checked?'grid':'none';
-    els.redVal.textContent=signedValue(els.redRange.value);els.greenVal.textContent=signedValue(els.greenRange.value);els.blueVal.textContent=signedValue(els.blueRange.value);
-    els.alphaVal.textContent=els.cutAlpha.value+'%';els.qualityVal.textContent=els.qualityRange.value+'%';els.zoomVal.textContent=Math.round(state.zoom*100)+'%';drawCropPreview();renderSheet(false);
+    els.brightnessVal.textContent=signedValue(els.brightnessRange.value);els.contrastVal.textContent=signedValue(els.contrastRange.value);els.redVal.textContent=signedValue(els.redRange.value);els.greenVal.textContent=signedValue(els.greenRange.value);els.blueVal.textContent=signedValue(els.blueRange.value);
+    els.alphaVal.textContent=els.cutAlpha.value+'%';els.qualityVal.textContent=els.qualityRange.value+'%';els.zoomVal.textContent=Math.round(state.zoom*100)+'%';drawCropPreview();renderSheet(false);scheduleProjectSave();
   }
 
   function exportImage(){
@@ -515,21 +474,35 @@
       els.photoHint.textContent='Можно загрузить только файл изображения.';
       return;
     }
-    const url=URL.createObjectURL(file), img=new Image();
-    img.onload=()=>{state.img=img;state.adjustedImg=null;state.rotatedImg=null;state.imageRotation=0;state.zoom=1;state.offsetX=0;state.offsetY=0;els.zoomRange.value=100;els.offsetX.value=0;els.offsetY.value=0;els.redRange.value=0;els.greenRange.value=0;els.blueRange.value=0;els.photoHint.textContent='Фото загружено. Двигайте его мышью, колесо — масштаб. Можно перетащить другое фото для замены.';renderAll();URL.revokeObjectURL(url)};
-    img.onerror=()=>{els.photoHint.textContent='Не удалось открыть изображение. Попробуйте другой файл.';URL.revokeObjectURL(url)};
-    img.src=url;
+    const reader=new FileReader();
+    reader.onload=()=>{state.imageData=String(reader.result);state.sampleIndex=null;els.brightnessRange.value=0;els.contrastRange.value=0;els.redRange.value=0;els.greenRange.value=0;els.blueRange.value=0;loadImageSource(state.imageData,'Фото загружено. Двигайте его мышью, колесо — масштаб.')};
+    reader.onerror=()=>{els.photoHint.textContent='Не удалось открыть изображение. Попробуйте другой файл.'};reader.readAsDataURL(file);
   }
 
-  function loadDefaultPhoto(){
-    const index=Math.random()<.5?0:1,filename=index===0?'1.png':'2.png',img=new Image();
+  function loadImageSource(source,hint){
+    const img=new Image();
     img.onload=()=>{
-      state.img=img;state.adjustedImg=null;state.rotatedImg=null;state.imageRotation=0;state.zoom=1;state.offsetX=0;state.offsetY=0;
-      els.zoomRange.value=100;els.offsetX.value=0;els.offsetY.value=0;els.redRange.value=0;els.greenRange.value=0;els.blueRange.value=0;
-      els.photoHint.textContent=`Загружено тестовое изображение ${filename}. Двигайте его мышью, колесо — масштаб.`;renderAll();
+      state.img=img;state.adjustedImg=null;state.rotatedImg=null;els.photoHint.textContent=hint;applyColorCorrection();
     };
-    img.onerror=()=>{els.photoHint.textContent='Не удалось загрузить тестовое изображение. Выберите фотографию вручную.'};
-    img.src=(window.PHOTO_SAMPLES&&window.PHOTO_SAMPLES[index])||filename;
+    img.onerror=()=>{els.photoHint.textContent='Не удалось загрузить изображение.'};img.src=source;
+  }
+  function loadDefaultPhoto(index=0){
+    state.sampleIndex=index;state.imageData=null;els.sampleBtn.textContent=String(index+1);els.sampleBtn.title=`Образец ${index+1}`;
+    loadImageSource((window.PHOTO_SAMPLES&&window.PHOTO_SAMPLES[index])||`${index+1}.png`,`Загружено тестовое изображение ${index+1}.png. Двигайте его мышью, колесо — масштаб.`);
+  }
+  function projectData(){
+    const values={};['photoPreset','photoW','photoH','sheetPreset','sheetW','sheetH','countInput','gapInput','brightnessRange','contrastRange','redRange','greenRange','blueRange','cutStyle','cutAlpha','formatSelect','qualityRange'].forEach(id=>values[id]=els[id].value);
+    values.maxFill=els.maxFill.checked;values.allowRotate=els.allowRotate.checked;
+    return {version:1,values,state:{zoom:state.zoom,offsetX:state.offsetX,offsetY:state.offsetY,imageRotation:state.imageRotation,rotated:state.rotated,sheetX:state.sheetX,sheetY:state.sheetY,sampleIndex:state.sampleIndex,imageData:state.imageData}};
+  }
+  let saveTimer=0,persistenceReady=false;
+  function scheduleProjectSave(){if(!persistenceReady)return;clearTimeout(saveTimer);saveTimer=setTimeout(()=>{try{localStorage.setItem('photoSheetProject',JSON.stringify(projectData()))}catch(e){}},120)}
+  function applyProject(data){
+    if(!data||data.version!==1)return false;const v=data.values||{},s=data.state||{};
+    Object.keys(v).forEach(id=>{if(els[id]&&typeof v[id]!=='boolean')els[id].value=v[id]});
+    els.maxFill.checked=!!v.maxFill;els.allowRotate.checked=v.allowRotate!==false;
+    ['zoom','offsetX','offsetY','imageRotation','sheetX','sheetY'].forEach(k=>{if(Number.isFinite(+s[k]))state[k]=+s[k]});state.rotated=s.rotated!==false;state.sampleIndex=s.sampleIndex;state.imageData=s.imageData||null;
+    els.zoomRange.value=Math.round(state.zoom*100);els.offsetX.value=state.offsetX;els.offsetY.value=state.offsetY;els.rotateSheetBtn.classList.toggle('active',state.rotated);els.rotateSheetBtn.setAttribute('aria-pressed',String(state.rotated));return true;
   }
 
   els.fileInput.addEventListener('change',e=>{loadPhoto(e.target.files&&e.target.files[0]);e.target.value=''});
@@ -540,8 +513,8 @@
   els.sheetPreset.addEventListener('change',()=>{applySheetPreset();renderAll(true)});
   [els.photoW,els.photoH].forEach(e=>e.addEventListener('input',()=>{els.photoPreset.value='custom';renderAll(true)}));
   [els.sheetW,els.sheetH].forEach(e=>e.addEventListener('input',()=>{els.sheetPreset.value='custom';renderAll(true)}));
-  [els.countInput,els.gapInput,els.marginInput].forEach(e=>e.addEventListener('input',()=>renderAll(true)));
-  [els.maxFill,els.allowRotate,els.useMargin].forEach(e=>e.addEventListener('change',()=>renderAll(true)));
+  [els.countInput,els.gapInput].forEach(e=>e.addEventListener('input',()=>renderAll(true)));
+  [els.maxFill,els.allowRotate].forEach(e=>e.addEventListener('change',()=>renderAll(true)));
   [els.cutStyle,els.cutAlpha].forEach(e=>e.addEventListener('input',renderAll));
   els.formatSelect.addEventListener('change',()=>{els.qualityWrap.style.display=els.formatSelect.value==='jpg'?'block':'none';renderAll()});
   els.qualityRange.addEventListener('input',renderAll);
@@ -549,8 +522,8 @@
   els.offsetX.addEventListener('input',()=>{state.offsetX=parseFloat(els.offsetX.value)||0;renderAll()});
   els.offsetY.addEventListener('input',()=>{state.offsetY=parseFloat(els.offsetY.value)||0;renderAll()});
   els.resetCropBtn.addEventListener('click',()=>{state.zoom=1;state.offsetX=0;state.offsetY=0;els.zoomRange.value=100;els.offsetX.value=0;els.offsetY.value=0;renderAll()});
-  [els.redRange,els.greenRange,els.blueRange].forEach(e=>e.addEventListener('input',scheduleColorCorrection));
-  els.resetColorBtn.addEventListener('click',()=>{els.redRange.value=0;els.greenRange.value=0;els.blueRange.value=0;applyColorCorrection()});
+  [els.brightnessRange,els.contrastRange,els.redRange,els.greenRange,els.blueRange].forEach(e=>e.addEventListener('input',scheduleColorCorrection));
+  els.resetColorBtn.addEventListener('click',()=>{els.brightnessRange.value=0;els.contrastRange.value=0;els.redRange.value=0;els.greenRange.value=0;els.blueRange.value=0;applyColorCorrection()});
   els.rotateSheetBtn.addEventListener('click',()=>{
     state.rotated=!state.rotated;
     const w=els.sheetW.value;els.sheetW.value=els.sheetH.value;els.sheetH.value=w;
@@ -560,6 +533,9 @@
   });
   els.rotatePhotoBtn.addEventListener('click',()=>{if(!state.img)return;state.imageRotation=(state.imageRotation+90)%360;const x=state.offsetX;state.offsetX=-state.offsetY;state.offsetY=x;els.offsetX.value=state.offsetX.toFixed(1);els.offsetY.value=state.offsetY.toFixed(1);updateRotatedImage();renderAll()});
   els.exportBtn.addEventListener('click',exportImage);
+  els.sampleBtn.addEventListener('click',()=>loadDefaultPhoto(state.sampleIndex===0?1:0));
+  els.saveProjectBtn.addEventListener('click',()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(projectData(),null,2)],{type:'application/json'}));a.download='photo-sheet-project.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)});
+  els.projectInput.addEventListener('change',e=>{const file=e.target.files&&e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=()=>{try{const data=JSON.parse(reader.result);applyProject(data);renderAll();if(state.imageData)loadImageSource(state.imageData,'Фотография восстановлена из проекта.');else loadDefaultPhoto(Number.isInteger(state.sampleIndex)?state.sampleIndex:0)}catch(err){alert('Не удалось открыть JSON проекта.')}};reader.readAsText(file);e.target.value=''});
 
   // Store the group position in centimetres so resizing and export keep it.
   let sheetPixelsPerCm=1, sheetDrag=null;
@@ -597,7 +573,7 @@
     if(state.snapX)nextX=d.centerX;
     if(state.snapY)nextY=d.centerY;
     state.sheetX=nextX;state.sheetY=nextY;
-    renderSheet(false);
+    renderSheet(false);scheduleProjectSave();
   });
   function finishSheetDrag(){
     if(!sheetDrag)return;
@@ -614,10 +590,18 @@
   window.addEventListener('mouseup',()=>{if(!state.drag)return;state.drag=false;els.cropCanvas.classList.remove('dragging');renderAll()});
   window.addEventListener('mousemove',e=>{if(!state.drag)return;const dx=e.clientX-state.lastX,dy=e.clientY-state.lastY;state.lastX=e.clientX;state.lastY=e.clientY;state.offsetX=Math.max(-100,Math.min(100,state.offsetX+dx*.9));state.offsetY=Math.max(-100,Math.min(100,state.offsetY+dy*.9));els.offsetX.value=state.offsetX.toFixed(1);els.offsetY.value=state.offsetY.toFixed(1);renderAll()});
   els.cropCanvas.addEventListener('wheel',e=>{if(!state.img)return;e.preventDefault();state.zoom=Math.max(1,Math.min(3,state.zoom+(e.deltaY<0?.08:-.08)));els.zoomRange.value=Math.round(state.zoom*100);renderAll()},{passive:false});
+  els.canvasArea.addEventListener('wheel',e=>{
+    if(!e.ctrlKey)return;
+    e.preventDefault();
+    const step=parseFloat(els.gapInput.step)||.5,min=parseFloat(els.gapInput.min)||0,max=parseFloat(els.gapInput.max)||10;
+    const current=parseFloat(els.gapInput.value)||0,next=Math.max(min,Math.min(max,current+(e.deltaY<0?step:-step)));
+    els.gapInput.value=Number(next.toFixed(2));renderAll(true);
+  },{passive:false});
   window.addEventListener('resize',renderAll);
   applySheetPreset();
-  renderAll();
-  loadDefaultPhoto();
+  let restored=null;try{restored=JSON.parse(localStorage.getItem('photoSheetProject')||'null')}catch(e){}
+  applyProject(restored);persistenceReady=true;renderAll();
+  if(state.imageData)loadImageSource(state.imageData,'Фотография восстановлена из сохранённого проекта.');else loadDefaultPhoto(Number.isInteger(state.sampleIndex)?state.sampleIndex:0);
 })();
 </script>
 </body>
